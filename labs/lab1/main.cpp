@@ -138,26 +138,30 @@ int main(int argc, char** argv) {
         if (point.getY() < minX)
             minY = point.getY();
     }
-
+    
     bitmap_image image(640, 480);
     float triangleArea = calcTriangleArea(pointArr);
-    for (int i=minX;i<maxX;i++){
-        for (int j=minY; j<maxY;j++){
+    for (int i=minX;i<=maxX;i++){
+        for (int j=minY; j<=maxY;j++){
             Point betaArr[3];
             Point gammaArr[3];
-            betaArr[0] = pointArr[0];
+            betaArr[0].setX(pointArr[0].getX());
+            betaArr[0].setY(pointArr[0].getY());
             betaArr[1].setX(i);
             betaArr[1].setY(j);
-            betaArr[2] = pointArr[2];
-            gammaArr[0] = pointArr[0];
-            gammaArr[1] = pointArr[1];
+            betaArr[2].setX(pointArr[2].getX());
+            betaArr[2].setY(pointArr[2].getY());
+            gammaArr[0].setX(pointArr[0].getX());
+            gammaArr[0].setY(pointArr[0].getY());
+            gammaArr[1].setX(pointArr[1].getX());
+            gammaArr[1].setY(pointArr[1].getY());
             gammaArr[2].setX(i);
             gammaArr[2].setY(j);
             float beta = calcTriangleArea(betaArr)/triangleArea;
             float gamma = calcTriangleArea(gammaArr)/triangleArea;
             float alpha = 1 - beta - gamma;
-            if((0 < beta && beta < 1) && (0 < gamma && gamma < 1) && (0 < alpha && alpha < 1)) {
-                rgb_t color = make_colour(255*(alpha+pointArr[0].getR()+pointArr[1].getR()+pointArr[2].getR()), 255*(beta+pointArr[0].getG()+pointArr[1].getG()+pointArr[2].getG()), 255*(gamma+pointArr[0].getB()+pointArr[1].getB()+pointArr[2].getB()));
+            if(0 < beta && beta < 1 && 0 < gamma && gamma < 1 && 0 < alpha && alpha < 1) {
+                rgb_t color = make_colour(alpha*255*(pointArr[0].getR()+pointArr[1].getR()+pointArr[2].getR()), beta*255*(pointArr[0].getG()+pointArr[1].getG()+pointArr[2].getG()), gamma*255*(pointArr[0].getB()+pointArr[1].getB()+pointArr[2].getB()));
                 image.set_pixel(i,j,color);
             }
         }
