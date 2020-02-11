@@ -8,17 +8,15 @@
 
 #include <csci441/shader.h>
 
+#include "matrix4.h"
+
 void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-void processInput(GLFWwindow *window) {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, true);
-    }
-}
-
 int main(void) {
+    Matrix4 m;
+    int counter = 0;
     /* Initialize the library */
     GLFWwindow* window;
     if (!glfwInit()) {
@@ -87,7 +85,18 @@ int main(void) {
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window)) {
         // process input
-        processInput(window);
+        // processInput(window, counter);
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+            glfwSetWindowShouldClose(window, true);
+        } else if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS){
+            if(counter == 4){
+            counter = 0;
+            glfwWaitEventsTimeout(0.7);
+            } else {
+            counter = counter + 1;
+            glfwWaitEventsTimeout(0.7);
+            }
+    }
 
         /* Render here */
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -95,6 +104,20 @@ int main(void) {
 
         // use the shader
         shader.use();
+        if(counter == 0) { 
+            m.init_to_id();
+        } else if(counter == 1){
+            m.init_to_rotation(20*(float)glfwGetTime());
+        } else if(counter == 2) {
+            m.init_to_rotation_translation(20*(float)glfwGetTime());
+        } else if(counter == 3) { 
+            m.init_to_scaling(sin((float)glfwGetTime()));
+        } else if(counter == 4) {
+            m.init_to_random(20*(float)glfwGetTime(),sin((float)glfwGetTime()));
+        }
+       
+        unsigned int transformLoc = glGetUniformLocation(shader.id(), "transform");
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, m.getValues());
 
         /** Part 2 animate and scene by updating the transformation matrix */
 
