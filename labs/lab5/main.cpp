@@ -16,6 +16,10 @@
 
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 960;
+float lightX = .5;
+float lightY = .5; 
+float lightZ =-.9;
+int object =1;
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
@@ -53,7 +57,23 @@ Matrix4 processModel(const Matrix4& model, GLFWwindow *window) {
     else if (isPressed(window, GLFW_KEY_RIGHT)) { trans.translate(TRANS, 0, 0); }
     else if (isPressed(window, ',')) { trans.translate(0,0,TRANS); }
     else if (isPressed(window, '.')) { trans.translate(0,0,-TRANS); }
-
+    // LIGHTING
+    else if (isPressed(window, GLFW_KEY_W)) {lightY = lightY + .05; }
+    else if (isPressed(window, GLFW_KEY_S)) {lightY = lightY - .05; }
+    else if (isPressed(window, GLFW_KEY_A)) {lightX = lightX + .05; }
+    else if (isPressed(window, GLFW_KEY_D)) {lightX = lightX - .05; }
+    else if (isPressed(window, GLFW_KEY_E)) {lightZ = lightZ - .05; }
+    else if (isPressed(window, GLFW_KEY_F)) {lightZ = lightZ + .05; }
+    // SWITCH SHAPES
+    else if (isPressed(window, GLFW_KEY_SPACE)) {
+        if(object == 0) {
+            object = 1; 
+            glfwWaitEventsTimeout(0.7);
+        } else {
+            object = 0;
+             glfwWaitEventsTimeout(0.7);
+        }
+    }
     return trans * model;
 }
 
@@ -104,28 +124,46 @@ int main(void) {
 
     // create c
     // Cylinder c(20, 1, .2, .4);
-    // Cone c(20, 1, .2, .4);
+    Cone c(100, 1, .2, .4);
     // Sphere c(20, .5, 1, .2, .4);
     // Torus c(20, .75, .25, 1, .2, .4);
-    DiscoCube c;
+    DiscoCube dc;
 
     // copy vertex data
-    GLuint VBO1;
-    glGenBuffers(1, &VBO1);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO1);
-    glBufferData(GL_ARRAY_BUFFER, c.coords.size()*sizeof(float),
-            &c.coords[0], GL_STATIC_DRAW);
+    GLuint VBO1[2];
+    glGenBuffers(2, &VBO1[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO1[0]);
+    glBufferData(GL_ARRAY_BUFFER, dc.coords.size()*sizeof(float),
+            &dc.coords[0], GL_STATIC_DRAW);
 
     // describe vertex layout
-    GLuint VAO1;
-    glGenVertexArrays(1, &VAO1);
-    glBindVertexArray(VAO1);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float),
+    GLuint VAO1[2];
+    glGenVertexArrays(2, &VAO1[0]);
+    glBindVertexArray(VAO1[0]);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9*sizeof(float),
             (void*)0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float),
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9*sizeof(float),
             (void*)(3*sizeof(float)));
     glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9*sizeof(float),
+            (void*)(6*sizeof(float)));
+    glEnableVertexAttribArray(2);
+
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO1[1]);
+    glBufferData(GL_ARRAY_BUFFER, c.coords.size()*sizeof(float),
+            &c.coords[0], GL_STATIC_DRAW);
+    glBindVertexArray(VAO1[1]);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9*sizeof(float),
+            (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9*sizeof(float),
+            (void*)(3*sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9*sizeof(float),
+            (void*)(6*sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     // setup projection
     Matrix4 projection;
@@ -148,6 +186,10 @@ int main(void) {
     // set the matrices
     Matrix4 model;
 
+    // set up the vectors
+    
+    Vector4 lightColor(1, 1, 1);
+
     // and use z-buffering
     glEnable(GL_DEPTH_TEST);
 
@@ -159,17 +201,31 @@ int main(void) {
         /* Render here */
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+        Vector4 lightPos(lightX, lightY, lightZ);
         // activate shader
         shader.use();
+
 
         Uniform::set(shader.id(), "model", model);
         Uniform::set(shader.id(), "projection", projection);
         Uniform::set(shader.id(), "camera", camera);
 
+        Uniform::set(shader.id(), "lightPos", lightPos);
+        Uniform::set(shader.id(), "lightColor", lightColor);
+        Uniform::set(shader.id(), "viewPos", eye);
+
         // render the cube
-        glBindVertexArray(VAO1);
-        glDrawArrays(GL_TRIANGLES, 0, c.coords.size()*sizeof(float));
+        
+
+        if(object == 0) {
+            glBindVertexArray(VAO1[1]);
+            glDrawArrays(GL_TRIANGLES, 0, c.coords.size()*sizeof(float));
+
+        } else {
+            glBindVertexArray(VAO1[0]);
+            glDrawArrays(GL_TRIANGLES, 0, dc.coords.size()*sizeof(float));
+        }
+        
 
         /* Swap front and back and poll for io events */
         glfwSwapBuffers(window);

@@ -95,13 +95,16 @@ public:
     tempVecCamDirec[0] = camDirec[0];
     tempVecCamDirec[1] = camDirec[1];
     tempVecCamDirec[2] = camDirec[2];
+    cout << camDirec[0] << camDirec[1] << camDirec[2] << endl;
     float tempVec[3];
     cross(upDirec, camDirec, tempVec);
+    
     float *rightDirec = normalize(tempVec); 
     values[0] = rightDirec[0];
     values[1] = rightDirec[1];
     values[2] = rightDirec[2];
     float camUpDirec[3];
+    cout << camDirec[0] << camDirec[1] << camDirec[2] << endl;
     cross(tempVecCamDirec, rightDirec, camUpDirec);
     values[4] = camUpDirec[0];
     values[5] = camUpDirec[1];
