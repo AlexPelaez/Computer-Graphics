@@ -3,6 +3,7 @@
 
 #include <cstdlib>
 #include <vector>
+using namespace std;
 
 template <typename T, typename N, typename C>
 void add_vertex(T& coords, const N& x, const N& y, const N& z,
@@ -16,11 +17,6 @@ void add_vertex(T& coords, const N& x, const N& y, const N& z,
     coords.push_back(r*noise);
     coords.push_back(g*noise);
     coords.push_back(b*noise);
-
-    Vector4 normal = n.normalized();
-    coords.push_back(normal.x());
-    coords.push_back(normal.y());
-    coords.push_back(normal.z());
 }
 
 class DiscoCube {
@@ -213,6 +209,7 @@ public:
     }
 };
 
+
 class Torus {
     double x(float c, float a, float phi, float theta) {
         return (c+a*cos(theta))*cos(phi);
@@ -225,11 +222,49 @@ class Torus {
     double z(float c, float a, float phi, float theta) {
         return a*sin(theta);
     }
-
+private:
+    void smoothLighting(std::vector<float> &coords) {
+        int member = 1;
+        for (vector<float>::iterator iterator = coords.begin(); iterator < coords.end(); iterator += 9)
+        {
+            advance(iterator, 6);    
+            float normal_x = *iterator;
+            advance(iterator, 1);
+            float normal_y = *iterator;
+            advance(iterator, 1);
+            float normal_z = *iterator;
+            advance(iterator, -8);
+            member = 1;
+           
+            for (vector<float>::iterator iterator2 = coords.begin();
+                 iterator2 < coords.end();
+                 iterator2 += 9)
+            {
+                if (distance(iterator, iterator2) == 0) {
+                    normal_x += *iterator2;
+                    advance(iterator2, 1);
+                    normal_y += *iterator2;
+                    advance(iterator2, 1);
+                    normal_z += *iterator2;
+                    advance(iterator2, 1);
+                    member++;
+                }
+            }
+            advance(iterator, 6);
+            normal_x /= member;
+            *iterator = normal_x;
+            advance(iterator, 1);
+            normal_y /= member;
+            *iterator = normal_y;
+            advance(iterator, 1);
+            normal_z /= member;
+            *iterator = normal_z;
+            advance(iterator, -8);
+        }
+    }
 public:
     std::vector<float> coords;
-    Torus(unsigned int n, float c, float a, float r, float g, float b) {
-
+    Torus(unsigned int n, float c, float a, float r, float g, float b, int lightMode) {
         double step_size = 2*M_PI / n;
         double c_x=0;
         double c_y=0;
@@ -264,18 +299,45 @@ public:
                 double vip1jp1_z = z(c, a, phi_ip1, theta_jp1);
 
                 // add triangle
+                Vector4 vertex1(vij_x - vip1j_x, vij_y - vip1j_y, vij_z - vip1j_z);
+                Vector4 vertex2(vij_x - vijp1_x, vij_y - vijp1_y, vij_z - vijp1_z);
+                Vector4 normal1 = vertex1.cross(vertex2).normalized();
                 add_vertex(coords, vij_x, vij_y, vij_z, r, g, b);
+                coords.push_back(normal1.x());
+                coords.push_back(normal1.y());
+                coords.push_back(normal1.z());
                 add_vertex(coords, vip1j_x, vip1j_y, vip1j_z, r, g, b);
+                coords.push_back(normal1.x());
+                coords.push_back(normal1.y());
+                coords.push_back(normal1.z());
                 add_vertex(coords, vijp1_x, vijp1_y, vijp1_z, r, g, b);
+                coords.push_back(normal1.x());
+                coords.push_back(normal1.y());
+                coords.push_back(normal1.z());
 
-                // add triange
+                // add triangle
+                Vector4 vertex3(vijp1_x - vip1jp1_x, vijp1_y - vip1jp1_y, vijp1_z - vip1jp1_z);
+                Vector4 vertex4(vijp1_x - vip1j_x, vijp1_y - vip1j_y, vijp1_z - vip1j_z);
+                Vector4 normal2 = vertex3.cross(vertex4).normalized();
                 add_vertex(coords, vijp1_x, vijp1_y, vijp1_z, r, g, b);
+                coords.push_back(-normal2.x());
+                coords.push_back(-normal2.y());
+                coords.push_back(-normal2.z());
                 add_vertex(coords, vip1jp1_x, vip1jp1_y, vip1jp1_z, r, g, b);
+                coords.push_back(-normal2.x());
+                coords.push_back(-normal2.y());
+                coords.push_back(-normal2.z());
                 add_vertex(coords, vip1j_x, vip1j_y, vip1j_z, r, g, b);
+                coords.push_back(-normal2.x());
+                coords.push_back(-normal2.y());
+                coords.push_back(-normal2.z());
             }
         }
-    }
 
+        if (lightMode == 1) {
+            smoothLighting(coords);
+        }
+    }
 };
 
 #endif

@@ -18,6 +18,10 @@
 #include "camera.h"
 #include "renderer.h"
 
+#define FLAT_LIGHT      0
+#define SHADED_LIGHT    1
+int mode = 0;
+
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 960;
 
@@ -57,6 +61,15 @@ Matrix4 processModel(const Matrix4& model, GLFWwindow *window) {
     else if (isPressed(window, GLFW_KEY_RIGHT)) { trans.translate(TRANS, 0, 0); }
     else if (isPressed(window, ',')) { trans.translate(0,0,TRANS); }
     else if (isPressed(window, '.')) { trans.translate(0,0,-TRANS); }
+    else if (isPressed(window, GLFW_KEY_SPACE)) {
+        if(mode == FLAT_LIGHT) {
+            mode = SHADED_LIGHT;
+            glfwWaitEventsTimeout(0.7);
+        } else {
+            mode = FLAT_LIGHT;
+             glfwWaitEventsTimeout(0.7);
+        }
+    }
 
     return trans * model;
 }
@@ -104,10 +117,17 @@ int main(void) {
         glfwTerminate();
         return -1;
     }
-
+    
+    Torus shaded(40, .75, .5, 1, .2, .4, SHADED_LIGHT);
+    Torus flat(40, .75, .5, 1, .2, .4, FLAT_LIGHT);
+    
     // create obj
-    Model obj(
-            Torus(40, .75, .5, 1, .2, .4).coords,
+    Model flatObj(
+            flat.coords,
+            Shader("../vert.glsl", "../frag.glsl"));
+
+    Model shadedObj(
+            shaded.coords,
             Shader("../vert.glsl", "../frag.glsl"));
 
     // make a floor
@@ -141,14 +161,20 @@ int main(void) {
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window)) {
         // process input
-        processInput(obj.model, window);
+        if (mode == FLAT_LIGHT)
+            processInput(flatObj.model, window);
+        else
+            processInput(shadedObj.model, window);
 
         /* Render here */
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // render the object and the floor
-        renderer.render(camera, obj, lightPos);
+        if (mode == FLAT_LIGHT)
+            renderer.render(camera, flatObj, lightPos);
+        else
+            renderer.render(camera, shadedObj, lightPos);
+
         renderer.render(camera, floor, lightPos);
 
         /* Swap front and back and poll for io events */
