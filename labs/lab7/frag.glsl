@@ -1,6 +1,10 @@
 #version 330 core
 
+in vec2 ourTexCoord;
+
 out vec4 fragColor;
+
+uniform sampler2D ourTex;
 
 /**
  * TODO: PART-1 update the fragment shader to get the texture coordinates from
@@ -13,5 +17,5 @@ out vec4 fragColor;
  */
 
 void main() {
-    fragColor = vec4(1, 0, 0, 1);
+    fragColor = texture(ourTex, ourTexCoord);
 }

@@ -21,6 +21,7 @@
 
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 960;
+int object = 0;
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
@@ -62,28 +63,37 @@ Matrix4 processModel(const Matrix4& model, GLFWwindow *window) {
     return trans * model;
 }
 
-bool isSpaceEvent(GLFWwindow *window) {
-    static bool pressed = false;
+// bool isSpaceEvent(GLFWwindow *window) {
+//     static bool pressed = false;
 
-    bool trigger = false;
-    if (isPressed(window, GLFW_KEY_SPACE)) {
-        pressed = true;
-    } else if (pressed && isReleased(window, GLFW_KEY_SPACE)) {
-        pressed = false;
-        trigger = true;
-    }
-    return trigger;
-}
+//     bool trigger = false;
+//     if (isPressed(window, GLFW_KEY_SPACE)) {
+//         pressed = true;
+//     } else if (pressed && isReleased(window, GLFW_KEY_SPACE)) {
+//         pressed = false;
+//         trigger = true;
+//     }
+//     return trigger;
+// }
 
 void processInput(Matrix4& model, GLFWwindow *window) {
     if (isPressed(window, GLFW_KEY_ESCAPE) || isPressed(window, GLFW_KEY_Q)) {
         glfwSetWindowShouldClose(window, true);
-    } else if (isSpaceEvent(window)) {
-        /**
-         * TODO: PART-6 for demo, add code here to change the mode without
-         * having massive flickering
-         **/
+    } else if (isPressed(window, GLFW_KEY_SPACE)) {
+        if(object == 0) {
+            object = 1; 
+            glfwWaitEventsTimeout(0.7);
+        } else {
+            object = 0;
+             glfwWaitEventsTimeout(0.7);
+        }
     }
+    // } else if (isSpaceEvent(window)) {
+    //     /**
+    //      * TODO: PART-6 for demo, add code here to change the mode without
+    //      * having massive flickering
+    //      **/
+    // }
     model = processModel(model, window);
 }
 
@@ -93,10 +103,49 @@ void errorCallback(int error, const char* description) {
 
 GLuint createTexture() {
     GLuint textureID;
+    
 
     /**
      * TODO: Part-2 create the checker texture
      */
+
+    const int HEIGHT  = 250;
+    const int WIDTH = 250;
+    const int WHITECOLOR  = 0xFFFFFFFF;
+    const int BLACKCOLOR  = 0x00000000;
+    
+    GLuint image[HEIGHT*WIDTH];
+    int current = WHITECOLOR;
+
+    for (int i = 0; i < WIDTH; i++) {
+        for (int j = 0; j < HEIGHT; j++) {
+            int pntr = (i * WIDTH) + j;
+
+            if (pntr % 25 == 0) {
+                if(pntr % 6250 != 0) {
+                    if (current == BLACKCOLOR){
+                        current = WHITECOLOR;
+                    }
+                    
+                    else if (current == WHITECOLOR){
+                        current = BLACKCOLOR;
+                    }
+                    
+                }
+                
+            }
+
+            image[(i * WIDTH) + j] = current;
+        }
+    }
+
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WIDTH, HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     return textureID;
 }
@@ -119,6 +168,14 @@ GLuint loadTexture(const std::string& path, bool flip=true) {
         /**
          * TODO: Part-3 create a texture map for an image
          */
+
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_INT_8_8_8_8, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         stbi_image_free(data);
     } else {
@@ -191,19 +248,18 @@ int main(void) {
     glBindVertexArray(vao);
 
     // setup position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
     /** TODO: Part1 add vertex attribute pointer for texture coordinates */
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     // and use z-buffering
     glEnable(GL_DEPTH_TEST);
 
     // init the model matrix
     Matrix4 model;
-
-    // setup the textures
-    /** TODO: Part2 create and bind the texture. */
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window)) {
@@ -221,6 +277,14 @@ int main(void) {
         Uniform::set(shader.id(), "projection", camera.projection);
         Uniform::set(shader.id(), "camera", camera.look_at());
         Uniform::set(shader.id(), "eye", camera.eye);
+        Uniform::set(shader.id(), "ourTex", 0);
+
+        if(object == 1){
+            createTexture();
+        } else if(object == 0){
+            std::string imgPath = "../img/question.png";
+            loadTexture(imgPath);
+        }
 
         // render the cube
         glBindVertexArray(vao);
