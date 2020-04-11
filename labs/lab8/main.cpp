@@ -29,7 +29,14 @@ struct Sphere {
 
 
 void render(bitmap_image& image, const std::vector<Sphere>& world) {
-    // TODO: implement ray tracer
+    for (int y = 0; y < 480; ++y){
+        for (int x = 0; x < 640; ++x){
+            image.set_pixel(x, y, 122, 55, 233);
+        }
+    }
+
+
+
 }
 
 int main(int argc, char** argv) {
